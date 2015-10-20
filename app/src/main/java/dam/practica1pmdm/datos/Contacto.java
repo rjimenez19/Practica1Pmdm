@@ -7,9 +7,9 @@ import java.util.List;
 public class Contacto implements Serializable, Comparable<Contacto> {
     private long id;
     private String nombre;
-    private List<String> telefonos;
+    private ArrayList<String> telefonos;
 
-    public Contacto(long id, String nombre, List<String> telefonos) {
+    public Contacto(long id, String nombre, ArrayList<String> telefonos) {
         this.id = id;
         this.nombre = nombre;
         this.telefonos = telefonos;
@@ -51,7 +51,7 @@ public class Contacto implements Serializable, Comparable<Contacto> {
         return telefonos;
     }
 
-    public void setTelefonos(List<String> telefonos) {
+    public void setTelefonos(ArrayList<String> telefonos) {
         this.telefonos = telefonos;
     }
 

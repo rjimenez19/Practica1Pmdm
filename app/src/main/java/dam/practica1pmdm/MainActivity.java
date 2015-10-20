@@ -1,7 +1,10 @@
 package dam.practica1pmdm;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.database.Cursor;
+import android.net.Uri;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -30,6 +33,7 @@ import java.util.List;
 
 import dam.practica1pmdm.datos.Adaptador;
 import dam.practica1pmdm.datos.Contacto;
+import dam.practica1pmdm.datos.ListaTelefonos;
 import dam.practica1pmdm.datos.OrdenarLista;
 
 public class MainActivity extends AppCompatActivity {
@@ -43,13 +47,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         init();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
     }
 
     @Override
@@ -71,10 +68,14 @@ public class MainActivity extends AppCompatActivity {
 
         final ListView lv = (ListView) findViewById(R.id.lvLista);
         final ImageButton bt = (ImageButton) findViewById(R.id.imageButton);
-        final Button btOrdenar = (Button) findViewById(R.id.ordenarButton);
 
-        a = new ArrayList<Contacto>();
-        a = cargaDatos();
+        ListaTelefonos x = new ListaTelefonos(this);
+        a = x.getGestion();
+
+        for(Contacto aux:a){
+            aux.setTelefonos((ArrayList<String>) x.getListaTelefonos(this,aux.getId()));
+        }
+
         Collections.sort(a);
 
         adap = new Adaptador(this, R.layout.item, a);
@@ -91,16 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
         bt.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
-                Añadir();
-            }
-        });
-
-        btOrdenar.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                Collections.sort(a, new OrdenarLista());
-                adap = new Adaptador(MainActivity.this, R.layout.item, a);
-                ListView lv = (ListView) findViewById(R.id.lvLista);
-                lv.setAdapter(adap);
+                añadir();
             }
         });
     }
@@ -130,7 +122,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     public void editar(final int posicion){
 
         AlertDialog.Builder alert= new AlertDialog.Builder(this);
@@ -139,17 +130,26 @@ public class MainActivity extends AppCompatActivity {
 
         final View vista = inflater.inflate(R.layout.editar, null);
 
+        final EditText et1, et2, et3;
+        et1 = (EditText) vista.findViewById(R.id.ededit);
+        et2 = (EditText) vista.findViewById(R.id.ededit2);
+        et3 = (EditText) vista.findViewById(R.id.ededit3);
+
+        et1.setHint(a.get(posicion).getNombre());
+        if(a.get(posicion).getTelefonos().size() == 2) {
+            et2.setHint(a.get(posicion).getTelefono(0));
+            et3.setHint(a.get(posicion).getTelefono(1));
+        }else if (a.get(posicion).getTelefonos().size() == 1){
+            et2.setHint(a.get(posicion).getTelefono(0));
+        }
+
         alert.setPositiveButton(R.string.editar,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
 
-                        long id = a.size()-1;
-                        EditText et1, et2, et3;
-                        final ArrayList<String> listaT;
+                        long id = a.size() - 1;
 
-                        et1 = (EditText) vista.findViewById(R.id.ededit);
-                        et2 = (EditText) vista.findViewById(R.id.ededit2);
-                        et3 = (EditText) vista.findViewById(R.id.ededit3);
+                        ArrayList<String> listaT;
 
                         String nombre = et1.getText().toString();
                         listaT = new ArrayList<>();
@@ -159,6 +159,7 @@ public class MainActivity extends AppCompatActivity {
                         a.get(posicion).setNombre(nombre);
                         a.get(posicion).setTelefonos(listaT);
 
+                        Collections.sort(a, new OrdenarLista());
                         adap = new Adaptador(MainActivity.this, R.layout.item, a);
                         ListView lv = (ListView) findViewById(R.id.lvLista);
                         lv.setAdapter(adap);
@@ -169,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
-    public void Añadir(){
+    public void añadir(){
 
         AlertDialog.Builder alert= new AlertDialog.Builder(this);
         alert.setTitle("Añadir");
@@ -183,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
 
-                        final ArrayList<String> listaT;
+                        ArrayList<String> listaT;
                         long id = a.size() - 1;
 
                         ed1 = (EditText) vista.findViewById(R.id.nombreAn);
@@ -198,7 +199,10 @@ public class MainActivity extends AppCompatActivity {
                         Contacto nuevo = new Contacto(id, nombre, listaT);
 
                         a.add(nuevo);
-
+                        Collections.sort(a, new OrdenarLista());
+                        adap = new Adaptador(MainActivity.this, R.layout.item, a);
+                        ListView lv = (ListView) findViewById(R.id.lvLista);
+                        lv.setAdapter(adap);
                         adap.notifyDataSetChanged();
                     }
                 });
@@ -206,35 +210,4 @@ public class MainActivity extends AppCompatActivity {
         alert.setNegativeButton(R.string.dial_atras, null);
         alert.show();
     }
-
-    private static ArrayList<Contacto> cargaDatos() {
-
-        ArrayList<Contacto> x = new ArrayList<>();
-        ArrayList<String> telf = new ArrayList<>();
-        ArrayList<String> telf2 = new ArrayList<>();
-        ArrayList<String> telf3 = new ArrayList<>();
-        ArrayList<String> telf4 = new ArrayList<>();
-        Contacto a,b,c,d;
-
-        a = new Contacto(1,"Pepe", telf);
-        x.add(a);
-        telf.add("621421342");
-        telf.add("623421342");
-
-        b = new Contacto (2,"Juan",telf2);
-        telf2.add("621421342");
-        x.add(b);
-
-        c = new Contacto(3,"Maria", telf3);
-        telf3.add("621421342");
-        telf3.add("621826492");
-        x.add(c);
-
-        d = new Contacto(4,"Carlos",telf4);
-        telf4.add("621421342");
-        x.add(d);
-        return x;
-    }
-
-
 }
